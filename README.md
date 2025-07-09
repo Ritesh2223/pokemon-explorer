@@ -1,4 +1,3 @@
-Pokémon Explorer
 Pokémon Explorer is a responsive web application built with Next.js, TypeScript, and TailwindCSS, allowing users to browse and search Pokémon using the PokéAPI. The app features a homepage with a searchable Pokémon list, pagination, and a detail page for each Pokémon, displaying details like image, ID, types, abilities, stats, and moves. The favicon is a Pokémon_logo SVG, and the app is optimized with static site generation (SSG).
 Features
 
