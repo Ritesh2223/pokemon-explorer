@@ -1,115 +1,127 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { PokemonListResponse, PokemonListItem } from '../types/pokemon';
+import Link from 'next/link';
+import Image from 'next/image';
+import Head from 'next/head'; // Import Head component
+import Pikachu from "../../public/pikachu.svg"
 
 export default function Home() {
+  const [pokemons, setPokemons] = useState<PokemonListItem[]>([]);
+  const [filteredPokemons, setFilteredPokemons] = useState<PokemonListItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    const fetchPokemons = async () => {
+      try {
+        const response = await axios.get<PokemonListResponse>('https://pokeapi.co/api/v2/pokemon?limit=151');
+        setPokemons(response.data.results);
+        setFilteredPokemons(response.data.results);
+      } catch (error) {
+        console.error('Error fetching Pokémon:', error);
+      }
+    };
+    fetchPokemons();
+  }, []);
+
+  useEffect(() => {
+    const filtered = pokemons.filter(pokemon =>
+      pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredPokemons(filtered);
+    setCurrentPage(1); // Reset to first page on search
+  }, [searchTerm, pokemons]);
+
+  const getPokemonId = (url: string) => {
+    const parts = url.split('/');
+    return parts[parts.length - 2];
+  };
+
+  // Pagination logic
+  const totalPokemons = filteredPokemons.length;
+  const totalPages = Math.ceil(totalPokemons / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedPokemons = filteredPokemons.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1); // Reset to first page when items per page changes
+  };
+
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/pages/index.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="container mx-auto p-6">
+      <Head>
+        <title>Pokémon Explorer - Home</title>
+        <link rel="icon" href="/Pokémon_logo.svg" />
+        <meta name="description" content="Explore and search for Pokémon with Pokémon Explorer" />
+      </Head>
+      <h1 className="text-5xl font-extrabold text-center mb-8 text-blue-600">Pokémon Explorer</h1>
+      <input
+        type="text"
+        placeholder="Search Pokémon..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full max-w-md mx-auto p-3 mb-6 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500 transition"
+      />
+      <div className="flex justify-between items-center mb-6">
+        <div className="text-lg">
+          Total Pokémon: {totalPokemons} | Total Pages: {totalPages} | Current Page: {currentPage}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        <div className="flex items-center">
+          <label htmlFor="itemsPerPage" className="mr-2 text-lg">Items per page:</label>
+          <select
+            id="itemsPerPage"
+            value={itemsPerPage}
+            onChange={handleItemsPerPageChange}
+            className="p-2 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
+          >
+            {[10, 20, 30, 40, 50].map(num => (
+              <option key={num} value={num}>{num}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {paginatedPokemons.map((pokemon) => (
+          <Link key={pokemon.name} href={`/pokemon/${pokemon.name}`}>
+            <div className="p-4 bg-white rounded-lg shadow-md hover:shadow-xl transition transform hover:-translate-y-1">
+              <Image
+                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getPokemonId(pokemon.url)}.png`}
+                alt={pokemon.name}
+                width={120}
+                height={120}
+                className="mx-auto"
+              />
+              <h2 className="text-xl font-semibold capitalize text-center text-gray-800">{pokemon.name}</h2>
+            </div>
+          </Link>
+        ))}
+      </div>
+      <div className="flex justify-center items-center mt-6 gap-4">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:bg-gray-400 hover:bg-blue-700 transition"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          Previous
+        </button>
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:bg-gray-400 hover:bg-blue-700 transition"
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Next
+        </button>
+      </div>
     </div>
   );
 }
